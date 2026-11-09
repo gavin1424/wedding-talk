@@ -2,7 +2,7 @@
   "name": "和新人說說話",
   "short_name": "新人對話",
   "start_url": "./",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#f7f1e6",
   "theme_color": "#f7f1e6",
   "icons": [
