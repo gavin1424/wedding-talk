@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>謝謝你</title>
+<meta name="theme-color" content="#e9dcc6">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600&family=LXGW+WenKai+TC&family=Cormorant+Garamond:ital@1&display=swap">
+<style>
+:root { --bg: #e9dcc6; --paper: #fbf5e9; --ink: #3f3226; --soft: #6e5f4e; --gold: #94743c; --line: rgba(148,116,60,.3);
+  --serif: "Noto Serif TC", "Songti TC", "PMingLiU", serif; --hand: "LXGW WenKai TC", "Noto Serif TC", serif; --latin: "Cormorant Garamond", serif; color-scheme: light; }
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { min-height: 100dvh; background: var(--bg); color: var(--ink); font-family: var(--serif); font-size: 17px; line-height: 1.9; }
+.desk { position: fixed; inset: 0; z-index: -1; background: linear-gradient(165deg, #efe3cf, #dcc9aa); }
+.desk img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* The letter: one sheet of paper; paragraphs surface one at a time as if being written */
+main { padding: clamp(28px, 7vw, 72px) 16px; display: grid; justify-items: center; gap: clamp(36px, 7vw, 64px); }
+.sheet { position: relative; width: min(100%, 640px); padding: clamp(40px, 9vw, 76px) clamp(26px, 8vw, 70px); background: var(--paper) url(../img/thanks/letter.jpg) center/cover; box-shadow: 0 30px 60px -24px rgba(60,40,18,.55), 0 2px 4px rgba(60,40,18,.15); animation: settle 1.1s cubic-bezier(.2,.7,.2,1) both; }
+@keyframes settle { from { opacity: 0; transform: translateY(26px) rotate(-1.2deg); } }
+.eyebrow { font-family: var(--latin); font-style: italic; color: var(--gold); font-size: 1.15rem; letter-spacing: .06em; text-align: center; margin: 0; }
+.pair { text-align: center; margin: 0 0 clamp(20px, 5vw, 34px); font-size: clamp(1.4rem, 4.6vw, 1.9rem); font-weight: 600; letter-spacing: .14em; }
+.body { font-family: var(--hand); font-size: clamp(1.14rem, 3.5vw, 1.36rem); line-height: 2.2; }
+.body p { margin: 0 0 1.05em; opacity: 0; transform: translateY(6px); animation: write .9s ease forwards; animation-delay: calc(.9s + var(--i) * 1.1s); }
+@keyframes write { to { opacity: 1; transform: none; } }
+.sign { font-family: var(--hand); font-size: clamp(1.2rem, 3.8vw, 1.5rem); text-align: right; margin: 1.6em 0 0; }
+.flower { position: absolute; right: 10px; bottom: 10px; width: clamp(88px, 22vw, 150px); opacity: .9; pointer-events: none; }
+.couple { display: block; width: min(68%, 300px); margin: 6px auto 0; filter: drop-shadow(0 10px 14px rgba(60,40,20,.25)); }
+.block { width: min(100%, 880px); text-align: center; }
+h2 { margin: 0 0 18px; font-weight: 600; font-size: clamp(1.3rem, 4vw, 1.7rem); letter-spacing: .22em; color: var(--ink); }
+#momentsBlock h2 { display: inline-block; padding: 4px 26px 4px 32px; background: rgba(251,245,233,.9); border-radius: 4px; }
+.moments { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+.moments img { width: 100%; aspect-ratio: 4/3; object-fit: cover; display: block; background: var(--paper); padding: 8px 8px 8px; box-shadow: 0 16px 30px -16px rgba(60,40,18,.5); }
+.talk { background: rgba(251,245,233,.86); padding: clamp(26px, 6vw, 42px) 22px; border-radius: 6px; }
+.talk p { margin: 0 0 20px; color: var(--soft); }
+.btn { display: inline-block; font: inherit; letter-spacing: .16em; padding: 11px 30px; border-radius: 99px; border: 1px solid var(--gold); background: var(--gold); color: #fffaf1; text-decoration: none; }
+.btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 3px; }
+@media (prefers-reduced-motion: reduce) { .sheet, .body p { animation: none; opacity: 1; transform: none; } }
+</style>
+</head>
+<body>
+<div class="desk"><picture><source media="(max-width:760px)" srcset="../img/thanks/desk-mobile.jpg"><img src="../img/thanks/desk-desktop.jpg" alt="" onerror="this.parentNode.remove()"></picture></div>
+<main>
+  <article class="sheet">
+    <p class="eyebrow">With all our thanks</p>
+    <h1 class="pair" id="pair"></h1>
+    <div class="body" id="body"></div>
+    <p class="sign" id="sign"></p>
+    <img class="couple" src="../img/couple.webp" alt="新郎與新娘的全身合照">
+    <img class="flower" src="../img/thanks/pressed-flower.png" alt="" onerror="this.remove()">
+  </article>
+  <section class="block" id="momentsBlock">
+    <h2>那一天</h2>
+    <div class="moments">
+      <img src="../img/thanks/moment-1.jpg" alt="新人向賓客敬酒" onerror="this.remove()">
+      <img src="../img/thanks/moment-2.jpg" alt="新人交換戒指" onerror="this.remove()">
+      <img src="../img/thanks/moment-3.jpg" alt="新人鞠躬致謝" onerror="this.remove()">
+    </div>
+  </section>
+  <section class="block talk">
+    <h2>再聊聊天</h2>
+    <p>想再跟新郎或新娘說句話，他們都在這裡。</p>
+    <a class="btn" href="../talk/">和新人說說話</a>
+  </section>
+</main>
+<script>
+fetch('../wedding.json').then(r => r.json()).then(W => {
+  document.title = `${W.groom.short} & ${W.bride.short} 謝謝你`;
+  document.getElementById('pair').textContent = `${W.groom.short} ＆ ${W.bride.short}`;
+  document.getElementById('body').replaceChildren(...W.thanksLetter.map((t, i) => { const p = document.createElement('p'); p.style.setProperty('--i', i); p.textContent = t; return p; }));
+  document.getElementById('sign').textContent = `${W.groom.name}・${W.bride.name}　敬上`;
+});
+window.addEventListener('load', () => setTimeout(() => { const b = document.getElementById('momentsBlock'); if (!b.querySelector('img')) b.remove(); }, 1500));
+</script>
+</body>
+</html>

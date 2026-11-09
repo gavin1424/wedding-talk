@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>和新人說說話</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#f7f1e6">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="../img/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;600;900&family=LXGW+WenKai+TC&display=swap">
+<style>
+/* Layout: the couple's stage fills the height on the left; on phones it sits on top with the chat below */
+:root {
+  --bg: #f7f1e6; --bg-2: #efe5d3; --ink: #3b2f24; --soft: #6e5f4e; --gold: #94743c; --gold-soft: #c9ad78; --line: rgba(148,116,60,.32);
+  --rose: #b96f62; --groom: #3f4a56; --bride: #b96f62;
+  --serif: "Noto Serif TC", "Songti TC", "PMingLiU", serif; --hand: "LXGW WenKai TC", "Noto Serif TC", serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; }
+body { background: var(--bg); color: var(--ink); font-family: var(--serif); font-size: 16px; line-height: 1.7; overflow: hidden; }
+.room { height: 100dvh; display: grid; grid-template-columns: auto minmax(0, 440px); gap: 40px; align-items: center; justify-content: center; padding-right: 24px; }
+.stage { position: relative; height: 100dvh; aspect-ratio: var(--ar, 4/5); max-width: 100vw; overflow: hidden; background: var(--bg-2) url(../media/talk/idle.jpg) center/cover; }
+.stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .22s linear; }
+.stage[data-clip=idle] .idle, .stage[data-clip=groom] .groom, .stage[data-clip=bride] .bride, .stage[data-clip=bow] .bow { opacity: 1; }
+.zone { position: absolute; top: 0; bottom: 0; border: 0; padding: 0; background: none; cursor: pointer; }
+.zone.g { left: 0; width: 47%; } .zone.b { left: 47%; right: 0; }
+.zone:focus-visible { outline: 3px solid var(--gold-soft); outline-offset: -6px; }
+.cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 60px 20px 22px; background: linear-gradient(0deg, rgba(40,28,18,.78), transparent); color: #fff9ee; font-family: var(--hand); font-size: clamp(1.1rem, 2.7vh, 1.6rem); line-height: 1.55; text-align: center; text-shadow: 0 1px 6px rgba(0,0,0,.55); opacity: 0; transition: opacity .25s; pointer-events: none; }
+.cap.on { opacity: 1; }
+.fs { position: absolute; top: max(12px, env(safe-area-inset-top, 0px)); right: 12px; padding: 5px 13px; border-radius: 99px; border: 1px solid rgba(255,255,255,.6); background: rgba(50,36,22,.42); color: #fff9ee; font: inherit; font-size: .82rem; letter-spacing: .08em; cursor: pointer; }
+.side { display: grid; gap: 14px; align-content: center; max-height: 100dvh; overflow-y: auto; padding-block: 24px; }
+.eyebrow { color: var(--gold); letter-spacing: .3em; font-size: .78rem; }
+h1 { margin: -8px 0 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 600; letter-spacing: .14em; }
+.lead { margin: 0; color: var(--soft); }
+.who { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.who button { font: inherit; padding: 10px; border-radius: 12px; border: 1px solid var(--line); background: transparent; color: var(--ink); cursor: pointer; letter-spacing: .08em; }
+.who small { display: block; font-size: .76rem; color: var(--soft); letter-spacing: .2em; }
+.who button[aria-pressed=true] { color: #fffaf1; border-color: transparent; }
+.who button[aria-pressed=true] small { color: inherit; }
+.who .g[aria-pressed=true] { background: var(--groom); } .who .b[aria-pressed=true] { background: var(--bride); }
+.who button:focus-visible, .chips button:focus-visible, .act:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chips button { font: inherit; font-size: .92rem; padding: 6px 14px; border-radius: 99px; border: 1px solid var(--line); background: #fffaf1; color: var(--ink); cursor: pointer; }
+.chips button:hover { border-color: var(--gold); }
+.status { display: flex; gap: 10px; align-items: center; min-height: 2.4em; }
+.you { flex: 1; margin: 0; font-size: .92rem; color: var(--gold); }
+.act { font: inherit; font-size: .88rem; padding: 5px 16px; border-radius: 99px; border: 1px solid var(--gold); background: transparent; color: var(--gold); cursor: pointer; }
+.say { display: flex; gap: 8px; }
+.say input { flex: 1; min-width: 0; font: inherit; color: var(--ink); background: #fffaf1; border: 1px solid var(--line); border-radius: 10px; padding: 9px 12px; }
+.say input:focus { outline: 2px solid var(--gold-soft); }
+.note { margin: 0; font-size: .78rem; color: var(--soft); }
+.links { display: flex; gap: 16px; font-size: .88rem; } .links a { color: var(--gold); }
+.busy .chips button, .busy .say > *, .busy .who button { opacity: .5; pointer-events: none; }
+.veil { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; align-content: center; gap: 12px; width: 100%; border: 0; padding: 24px; background: rgba(247,241,230,.72); color: var(--ink); font: inherit; cursor: pointer; backdrop-filter: blur(3px); }
+.veil b { font-family: var(--hand); font-size: clamp(1.7rem, 6vw, 2.4rem); font-weight: 400; letter-spacing: .1em; }
+.veil span { color: var(--soft); letter-spacing: .12em; font-size: .95rem; }
+/* Phones and portrait screens: couple on top, conversation underneath */
+@media (max-width: 760px), (max-aspect-ratio: 4/5) {
+  .room { display: flex; flex-direction: column; gap: 0; padding: 0; justify-content: flex-start; }
+  .stage { width: 100%; height: auto; max-height: 62dvh; flex: none; }
+  .side { flex: 1; width: 100%; align-content: start; gap: 10px; padding: 12px max(14px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(14px, env(safe-area-inset-left, 0px)); }
+  .eyebrow, h1, .lead { display: none; }
+  .note { text-align: center; }
+  .chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; } .chips::-webkit-scrollbar { display: none; }
+  .chips button { flex: none; }
+  .links { justify-content: center; }
+}
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+</head>
+<body>
+<div class="room">
+  <div class="stage" id="stage" data-clip="idle">
+    <video class="idle" id="v-idle" src="../media/talk/idle.mp4" poster="../media/talk/idle.jpg" muted loop autoplay playsinline preload="auto" aria-hidden="true"></video>
+    <video class="groom" id="v-groom" src="../media/talk/groom.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+    <video class="bride" id="v-bride" src="../media/talk/bride.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+    <video class="bow" id="v-bow" src="../media/talk/bow.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+    <button type="button" class="zone g" id="zoneG" aria-label="和新郎說話"></button>
+    <button type="button" class="zone b" id="zoneB" aria-label="和新娘說話"></button>
+    <div class="cap" id="cap" aria-live="polite"></div>
+    <button type="button" class="fs" id="fsBtn">全螢幕</button>
+  </div>
+  <div class="side" id="side">
+    <span class="eyebrow">TALK WITH US</span>
+    <h1>和新人說說話</h1>
+    <p class="lead">先選想聊的人，直接開口問就好。叫對方的名字也可以換人。</p>
+    <div class="who">
+      <button type="button" class="g" id="pickG" aria-pressed="true"><small>新郎</small><span id="nameG"></span></button>
+      <button type="button" class="b" id="pickB" aria-pressed="false"><small>新娘</small><span id="nameB"></span></button>
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="status"><p class="you" id="you" aria-live="polite"></p><button class="act" type="button" id="stopBtn" hidden>停止</button></div>
+    <form class="say" id="sayForm"><input id="sayInput" autocomplete="off" placeholder="也可以打字問" aria-label="輸入想問的話"><button class="act" type="submit">送出</button></form>
+    <p class="note">此為 AI 數字人，回答是新人事先寫好的內容，聲音為合成語音。</p>
+    <div class="links"><a href="../invite/">看喜帖</a><a href="../thanks/">看感謝信</a></div>
+  </div>
+</div>
+<button type="button" class="veil" id="veil" hidden><b>輕觸開始對話</b><span>請允許使用麥克風</span></button>
+<audio id="audio" preload="auto"></audio>
+<script>
+// One base pose: every clip starts and ends on the same photo, so switching clips never jumps.
+(() => {
+  const $ = id => document.getElementById(id);
+  const stage = $('stage'), audio = $('audio'), cap = $('cap'), side = $('side'), you = $('you'), chips = $('chips'), stopBtn = $('stopBtn');
+  const clips = { idle: $('v-idle'), groom: $('v-groom'), bride: $('v-bride'), bow: $('v-bow') };
+  let W, QA, who = 'groom', state = 'idle', caps = [], withBow = false, fb = { groom: 0, bride: 0 }, audioDone = false;
+
+  const show = name => {
+    const v = clips[name];
+    if (name !== 'idle') { v.currentTime = 0; v.play().catch(() => {}); }
+    stage.dataset.clip = name;
+    for (const k in clips) if (k !== name && k !== 'idle') { clips[k].pause(); }
+  };
+  const rest = () => {
+    state = 'idle'; show('idle'); clips.idle.play().catch(() => {});
+    side.classList.remove('busy'); cap.classList.remove('on'); stopBtn.hidden = true; audioDone = false;
+    if (handsFree) setTimeout(listen, 600);
+  };
+  const bowThenRest = () => { state = 'bowing'; cap.classList.remove('on'); show('bow'); };
+  const finish = () => withBow ? bowThenRest() : rest();
+  clips.bow.addEventListener('ended', rest);
+  // Speaking clips play through and return to the base pose; repeat while the voice continues
+  for (const k of ['groom', 'bride']) clips[k].addEventListener('ended', () => {
+    if (state !== 'talking') return;
+    if (audioDone) finish(); else { clips[k].currentTime = 0; clips[k].play().catch(() => {}); }
+  });
+  audio.addEventListener('ended', () => {
+    if (state !== 'talking') return;
+    audioDone = true;
+    const v = clips[who];
+    if (!(v.duration - v.currentTime < 1.2)) finish();   // nearly back at the base pose? let it land there
+  });
+  audio.addEventListener('timeupdate', () => {
+    if (state !== 'talking') return;
+    const t = audio.currentTime, c = caps.find(x => t >= x.s && t < x.e + .25);
+    if (c) { if (cap.textContent !== c.t) cap.textContent = c.t; cap.classList.add('on'); } else cap.classList.remove('on');
+  });
+  stopBtn.addEventListener('click', () => { audio.pause(); withBow = false; rest(); });
+
+  const norm = s => s.replace(/[\s，。！？、,.!?~～…「」『』"'：:；;（）()／/]/g, '').toLowerCase();
+  function match(text, person) {
+    const t = norm(text); let best = null, top = 0;
+    for (const it of QA[person]) {
+      if (it.fallback || !it.keys) continue;
+      let s = 0;
+      for (const k of it.keys) if (t.includes(k)) s += k.length * 2 + 1;
+      const pool = (it.chip || '') + it.keys.join('');
+      for (let i = 0; i < t.length - 1; i++) if (pool.includes(t.slice(i, i + 2))) s += 1;
+      if (s > top) { top = s; best = it; }
+    }
+    if (top >= 2) return best;
+    const list = QA[person].filter(x => x.fallback);
+    return list[fb[person]++ % list.length];
+  }
+  // Saying a name (or 新郎 / 新娘) hands the conversation to that person
+  function route(text) {
+    const t = norm(text);
+    if (t.includes('新娘') || t.includes(W.bride.short)) return 'bride';
+    if (t.includes('新郎') || t.includes(W.groom.short)) return 'groom';
+    return who;
+  }
+  function answer(text, it, person) {
+    if (!it || state !== 'idle') return;
+    if (rec) rec.abort();
+    pick(person);
+    you.textContent = text ? '你說：' + text : '';
+    audio.src = `../media/talk/${person}/${it.id}.mp3`;
+    caps = it.caps || []; withBow = !!it.bow; audioDone = false; state = 'talking';
+    side.classList.add('busy'); stopBtn.hidden = false; show(person);
+    audio.play().catch(rest);
+  }
+  function ask(text) { const p = route(text); answer(text, match(text, p), p); }
+  function pick(person) {
+    if (who === person && chips.childElementCount) return;
+    who = person;
+    $('pickG').setAttribute('aria-pressed', person === 'groom'); $('pickB').setAttribute('aria-pressed', person === 'bride');
+    chips.replaceChildren(...QA[person].filter(x => x.chip).map(it => {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = it.chip;
+      b.addEventListener('click', () => answer(it.chip, it, person));
+      return b;
+    }));
+  }
+  const choose = person => { if (state !== 'idle') return; pick(person); const hi = QA[person].find(x => x.id === 'hello'); answer('', hi, person); };
+  $('zoneG').onclick = $('pickG').onclick = () => choose('groom');
+  $('zoneB').onclick = $('pickB').onclick = () => choose('bride');
+  $('sayForm').addEventListener('submit', e => { e.preventDefault(); const v = $('sayInput').value.trim(); if (v && state === 'idle') { $('sayInput').value = ''; ask(v); } });
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  let rec = null, handsFree = false, noMic = !SR || location.search.includes('debug');
+  function listen() {
+    if (!handsFree || rec || state !== 'idle' || noMic) return;
+    rec = new SR(); rec.lang = 'zh-TW'; rec.interimResults = true;
+    let heard = '';
+    rec.onresult = e => { heard = Array.from(e.results, r => r[0].transcript).join(''); you.textContent = '你說：' + heard; };
+    rec.onerror = e => { if (['not-allowed', 'service-not-allowed', 'audio-capture'].includes(e.error)) { noMic = true; you.textContent = '麥克風沒有開啟，可以點問題或打字問。'; } };
+    rec.onend = () => { rec = null; const t = heard.trim(); if (t) ask(t); else if (handsFree) setTimeout(listen, 300); };
+    you.textContent = `${W[who].short}在聽，你說…`;
+    try { rec.start(); } catch { rec = null; }
+  }
+
+  const start = () => { handsFree = !noMic; choose(who); };
+  const soundAllowed = () => navigator.getAutoplayPolicy ? navigator.getAutoplayPolicy('mediaelement') === 'allowed' : false;
+  $('veil').addEventListener('click', () => { $('veil').hidden = true; start(); });
+
+  // Debug hook for local checks
+  if (new URLSearchParams(location.search).has('debug')) window.__talk = { state: () => ({ state, who, clip: stage.dataset.clip }), ask };
+
+  $('fsBtn').addEventListener('click', () => document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen?.());
+  if (!document.documentElement.requestFullscreen) $('fsBtn').hidden = true;
+  clips.idle.addEventListener('loadedmetadata', () => stage.style.setProperty('--ar', `${clips.idle.videoWidth}/${clips.idle.videoHeight}`));
+
+  Promise.all([fetch('../wedding.json').then(r => r.json()), fetch('../media/talk/qa.json', { cache: 'no-cache' }).then(r => r.json())]).then(([w, q]) => {
+    W = w; QA = q;
+    $('nameG').textContent = W.groom.name; $('nameB').textContent = W.bride.name;
+    pick('groom');
+    if (soundAllowed()) start(); else $('veil').hidden = false;
+  }).catch(() => { you.textContent = '內容載入失敗，請重新整理。'; });
+})();
+</script>
+</body>
+</html>
