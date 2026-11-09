@@ -26,7 +26,7 @@ body { background: var(--bg); color: var(--ink); font-family: var(--serif); font
 .room { height: 100dvh; display: grid; grid-template-columns: auto minmax(0, 440px); gap: 40px; align-items: center; justify-content: center; padding-right: 24px; }
 .stage { position: relative; height: 100dvh; aspect-ratio: var(--ar, 4/5); max-width: 100vw; overflow: hidden; background: var(--bg-2) url(../media/talk/idle.jpg) center/cover; }
 .stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .22s linear; }
-.stage[data-clip=idle] .idle, .stage[data-clip=groom] .groom, .stage[data-clip=bride] .bride, .stage[data-clip=bow] .bow { opacity: 1; }
+.stage[data-clip=idle] .idle, .stage[data-clip=groom] .groom, .stage[data-clip=bride] .bride, .stage[data-clip=bow] .bow, .stage[data-clip=wave] .wave, .stage[data-clip=heart] .heart, .stage[data-clip=look] .look { opacity: 1; }
 .zone { position: absolute; top: 0; bottom: 0; border: 0; padding: 0; background: none; cursor: pointer; }
 .zone.g { left: 0; width: 47%; } .zone.b { left: 47%; right: 0; }
 .zone:focus-visible { outline: 3px solid var(--gold-soft); outline-offset: -6px; }
@@ -80,6 +80,9 @@ h1 { margin: -8px 0 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 600; le
     <video class="groom" id="v-groom" src="../media/talk/groom.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
     <video class="bride" id="v-bride" src="../media/talk/bride.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
     <video class="bow" id="v-bow" src="../media/talk/bow.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+    <video class="wave" id="v-wave" src="../media/talk/wave.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+    <video class="heart" id="v-heart" src="../media/talk/heart.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+    <video class="look" id="v-look" src="../media/talk/look.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
     <button type="button" class="zone g" id="zoneG" aria-label="和新郎說話"></button>
     <button type="button" class="zone b" id="zoneB" aria-label="和新娘說話"></button>
     <div class="cap" id="cap" aria-live="polite"></div>
@@ -107,8 +110,8 @@ h1 { margin: -8px 0 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 600; le
 (() => {
   const $ = id => document.getElementById(id);
   const stage = $('stage'), audio = $('audio'), cap = $('cap'), side = $('side'), you = $('you'), chips = $('chips'), stopBtn = $('stopBtn');
-  const clips = { idle: $('v-idle'), groom: $('v-groom'), bride: $('v-bride'), bow: $('v-bow') };
-  let W, QA, who = 'groom', state = 'idle', caps = [], withBow = false, fb = { groom: 0, bride: 0 }, audioDone = false;
+  const clips = { idle: $('v-idle'), groom: $('v-groom'), bride: $('v-bride'), bow: $('v-bow'), wave: $('v-wave'), heart: $('v-heart'), look: $('v-look') };
+  let W, QA, who = 'groom', state = 'idle', caps = [], afterAct = null, speak = null, idleTimer = 0, fb = { groom: 0, bride: 0 }, audioDone = false;
 
   const show = name => {
     const v = clips[name];
@@ -119,11 +122,22 @@ h1 { margin: -8px 0 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 600; le
   const rest = () => {
     state = 'idle'; show('idle'); clips.idle.play().catch(() => {});
     side.classList.remove('busy'); cap.classList.remove('on'); stopBtn.hidden = true; audioDone = false;
+    speak = null; afterAct = null; scheduleIdleAct();
     if (handsFree) setTimeout(listen, 600);
   };
-  const bowThenRest = () => { state = 'bowing'; cap.classList.remove('on'); show('bow'); };
-  const finish = () => withBow ? bowThenRest() : rest();
-  clips.bow.addEventListener('ended', rest);
+  // While nobody is talking the couple now and then share a laugh, then land back on the base pose
+  function scheduleIdleAct() {
+    clearTimeout(idleTimer);
+    idleTimer = setTimeout(() => {
+      if (state === 'idle' && stage.dataset.clip === 'idle') show('look'); else scheduleIdleAct();
+    }, 14000 + Math.random() * 10000);
+  }
+  const finish = () => { if (afterAct) { state = 'acting'; cap.classList.remove('on'); show(afterAct); } else rest(); };
+  for (const k of ['bow', 'wave', 'heart', 'look']) clips[k].addEventListener('ended', () => {
+    if (state === 'intro' && speak) { const go = speak; speak = null; go(); }
+    else if (state === 'acting') rest();
+    else if (state === 'idle' && stage.dataset.clip === k) { show('idle'); clips.idle.play().catch(() => {}); scheduleIdleAct(); }
+  });
   // Speaking clips play through and return to the base pose; repeat while the voice continues
   for (const k of ['groom', 'bride']) clips[k].addEventListener('ended', () => {
     if (state !== 'talking') return;
@@ -140,7 +154,7 @@ h1 { margin: -8px 0 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 600; le
     const t = audio.currentTime, c = caps.find(x => t >= x.s && t < x.e + .25);
     if (c) { if (cap.textContent !== c.t) cap.textContent = c.t; cap.classList.add('on'); } else cap.classList.remove('on');
   });
-  stopBtn.addEventListener('click', () => { audio.pause(); withBow = false; rest(); });
+  stopBtn.addEventListener('click', () => { audio.pause(); rest(); });
 
   const norm = s => s.replace(/[\s，。！？、,.!?~～…「」『』"'：:；;（）()／/]/g, '').toLowerCase();
   function match(text, person) {
@@ -169,10 +183,12 @@ h1 { margin: -8px 0 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 600; le
     if (rec) rec.abort();
     pick(person);
     you.textContent = text ? '你說：' + text : '';
+    clearTimeout(idleTimer);
     audio.src = `../media/talk/${person}/${it.id}.mp3`;
-    caps = it.caps || []; withBow = !!it.bow; audioDone = false; state = 'talking';
-    side.classList.add('busy'); stopBtn.hidden = false; show(person);
-    audio.play().catch(rest);
+    caps = it.caps || []; afterAct = it.after || null; audioDone = false;
+    side.classList.add('busy'); stopBtn.hidden = false;
+    const talk = () => { state = 'talking'; show(person); audio.play().catch(rest); };
+    if (it.before) { state = 'intro'; speak = talk; show(it.before); } else talk();
   }
   function ask(text) { const p = route(text); answer(text, match(text, p), p); }
   function pick(person) {
@@ -203,7 +219,8 @@ h1 { margin: -8px 0 0; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 600; le
     try { rec.start(); } catch { rec = null; }
   }
 
-  const start = () => { handsFree = !noMic; choose(who); };
+  // First hello opens with both of them waving
+  const start = () => { handsFree = !noMic; pick(who); const hi = QA[who].find(x => x.id === 'hello'); answer('', { ...hi, before: 'wave' }, who); };
   const soundAllowed = () => navigator.getAutoplayPolicy ? navigator.getAutoplayPolicy('mediaelement') === 'allowed' : false;
   $('veil').addEventListener('click', () => { $('veil').hidden = true; start(); });
 
