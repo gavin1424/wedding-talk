@@ -168,19 +168,20 @@ body { background: #2a2018; color: var(--cream); font-family: var(--serif); font
 
   const norm = s => s.replace(/[\s，。！？、,.!?~～…「」『』"'：:；;（）()／/]/g, '').toLowerCase();
   function match(text, person) {
-    const t = norm(text); let best = null, top = 0;
+    const t = norm(text); let best = null, top = 0, keyed = false;
     for (const it of QA[person]) {
       if (it.fallback || !it.keys) continue;
-      let s = 0;
-      for (const k of it.keys) if (t.includes(k)) s += k.length * 2 + 1;
+      let s = 0, k0 = false;
+      for (const k of it.keys) if (t.includes(k)) { s += k.length * 2 + 1; k0 = true; }
       const pool = (it.chip || '') + it.keys.join('');
       for (let i = 0; i < t.length - 1; i++) if (pool.includes(t.slice(i, i + 2))) s += 1;
-      if (s > top) { top = s; best = it; }
+      if (s > top) { top = s; best = it; keyed = k0; }
     }
-    if (top >= 2) return best;
-    const list = QA[person].filter(x => x.fallback);
-    return list[fb[person]++ % list.length];
+    // With the live AI available, only a clear keyword hit uses a prepared answer; everything else goes to the AI
+    if (AI.on ? (keyed || top >= 5) : top >= 2) return best;
+    return null;
   }
+  const fallback = person => { const list = QA[person].filter(x => x.fallback); return list[fb[person]++ % list.length]; };
   // Saying a name (or 新郎 / 新娘) hands the conversation to that person
   function route(text) {
     const t = norm(text);
@@ -194,13 +195,56 @@ body { background: #2a2018; color: var(--cream); font-family: var(--serif); font
     pick(person);
     if (text || !noMic) you.textContent = text ? '你說：' + text : '';
     clearTimeout(idleTimer);
-    audio.src = `../media/talk/${person}/${it.id}.mp3`;
+    audio.src = it.audio || `../media/talk/${person}/${it.id}.mp3`;
     caps = it.caps || []; afterAct = it.after || null; audioDone = false;
+    // AI answers come without word timings: show the sentences in turn, timed by their length
+    if (it.audio) audio.addEventListener('loadedmetadata', () => { caps = timedCaps(it.text, audio.duration); }, { once: true });
     stage.classList.add('busy'); mic.classList.remove('on'); mic.hidden = true; stopBtn.hidden = false;
     const talk = () => { state = 'talking'; show(nextTalk(person)); audio.play().catch(rest); };
     if (it.before) { state = 'intro'; speak = talk; show(it.before); } else talk();
   }
-  function ask(text) { const p = route(text); answer(text, match(text, p), p); }
+  function ask(text) {
+    const p = route(text), it = match(text, p);
+    if (it) answer(text, it, p); else if (AI.on) askAI(text, p); else answer(text, fallback(p), p);
+  }
+
+  // ---- Live AI (GPT on the LUMIAVA server) for anything the prepared answers don't cover ----
+  const AI = { on: !params.has('noai'), url: params.get('ai') || 'https://lumiava-ai.com/api/wedding/chat', couple: 'demo' };
+  const history = { groom: [], bride: [] };
+  function timedCaps(text, dur) {
+    const parts = text.match(/[^，。！？；,!?]+[，。！？；,!?]*/g) || [text];
+    const total = parts.reduce((n, x) => n + x.length, 0) || 1;
+    let t = 0.1; const span = Math.max(1, (isFinite(dur) ? dur : text.length * .25) - .2);
+    // Pair short pieces so each caption is a readable line
+    const lines = [];
+    for (const x of parts) { if (lines.length && (lines[lines.length - 1] + x).length <= 18) lines[lines.length - 1] += x; else lines.push(x); }
+    return lines.map(x => { const s = t; t += span * x.length / total; return { s, e: t, t: x }; });
+  }
+  const afterFor = text => /謝謝|感謝|祝福|恭喜/.test(text) ? 'nod' : /愛|喜歡|幸福/.test(text) ? 'heart' : null;
+  async function askAI(text, person) {
+    if (state !== 'idle') return;
+    if (rec) rec.abort();
+    pick(person); state = 'thinking'; clearTimeout(idleTimer);
+    you.textContent = '你說：' + text;
+    cap.textContent = `${W[person].short}想一下…`; cap.classList.add('on');
+    stage.classList.add('busy'); mic.classList.remove('on'); mic.hidden = true;
+    let it;
+    try {
+      const ctl = new AbortController(), timer = setTimeout(() => ctl.abort(), 15000);
+      const r = await fetch(AI.url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, signal: ctl.signal,
+        body: JSON.stringify({ couple: AI.couple, person, text, history: history[person].slice(-4) }) });
+      clearTimeout(timer);
+      if (!r.ok) throw new Error(r.status);
+      const d = await r.json();
+      if (!d.text || !d.audio) throw new Error('empty');
+      history[person].push({ q: text, a: d.text });
+      it = { id: 'ai', text: d.text, audio: d.audio, after: afterFor(d.text) };
+    } catch {
+      it = fallback(person);   // AI busy, over quota or offline: the prepared "ask me something else" line
+    }
+    cap.classList.remove('on'); state = 'idle';
+    answer(text, it, person);
+  }
   function pick(person) {
     if (who === person && chips.childElementCount) return;
     who = person;
