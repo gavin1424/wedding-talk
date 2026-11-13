@@ -3,7 +3,10 @@
   "name": "陳柏宇",
   "short": "柏宇",
   "voice": "zh-TW-YunJheNeural",
-  "rate": "-4%"
+  "rate": "-4%",
+  "tts": "openai",
+  "openaiVoice": "ash",
+  "ttsStyle": "用台灣口音的國語說話，像二十多歲、溫和靦腆的新郎在婚禮上跟朋友聊天，自然、帶笑意。"
  },
  "bride": {
   "name": "林語彤",
