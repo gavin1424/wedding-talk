@@ -26,7 +26,8 @@ body { background: #2a2018; color: var(--cream); font-family: var(--serif); font
 .backdrop { position: fixed; inset: -40px; background: url(../media/talk/idle.jpg) center/cover; filter: blur(28px) brightness(.72); }
 .stage { position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: min(100vw, calc(100dvh * 9 / 16)); overflow: hidden; background: #2a2018 url(../media/talk/idle.jpg) center bottom/cover; }
 .stage video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center bottom; opacity: 0; transition: opacity .22s linear; }
-.stage[data-clip=idle] .idle, .stage[data-clip=groom] .groom, .stage[data-clip=bride] .bride, .stage[data-clip=bow] .bow, .stage[data-clip=wave] .wave, .stage[data-clip=heart] .heart, .stage[data-clip=look] .look { opacity: 1; }
+.stage[data-clip=idle] .idle, .stage[data-clip=groom] .groom, .stage[data-clip=bride] .bride, .stage[data-clip=bow] .bow, .stage[data-clip=wave] .wave, .stage[data-clip=heart] .heart, .stage[data-clip=look] .look,
+.stage[data-clip=groom2] .groom2, .stage[data-clip=bride2] .bride2, .stage[data-clip=nod] .nod, .stage[data-clip=hand] .hand { opacity: 1; }
 .zone { position: absolute; z-index: 1; top: 0; bottom: 0; border: 0; padding: 0; background: none; cursor: pointer; }
 .zone.g { left: 0; width: 45%; } .zone.b { left: 45%; right: 0; }
 .zone:focus-visible { outline: 3px solid var(--gold); outline-offset: -6px; }
@@ -73,6 +74,10 @@ body { background: #2a2018; color: var(--cream); font-family: var(--serif); font
   <video class="wave" id="v-wave" src="../media/talk/wave.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
   <video class="heart" id="v-heart" src="../media/talk/heart.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
   <video class="look" id="v-look" src="../media/talk/look.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+  <video class="groom2" id="v-groom2" src="../media/talk/groom2.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+  <video class="bride2" id="v-bride2" src="../media/talk/bride2.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+  <video class="nod" id="v-nod" src="../media/talk/nod.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
+  <video class="hand" id="v-hand" src="../media/talk/hand.mp4" muted playsinline preload="auto" aria-hidden="true"></video>
   <button type="button" class="zone g" id="zoneG" aria-label="和新郎說話"></button>
   <button type="button" class="zone b" id="zoneB" aria-label="和新娘說話"></button>
   <div class="top">
@@ -100,7 +105,21 @@ body { background: #2a2018; color: var(--cream); font-family: var(--serif); font
 (() => {
   const $ = id => document.getElementById(id);
   const stage = $('stage'), audio = $('audio'), cap = $('cap'), you = $('you'), chips = $('chips'), stopBtn = $('stopBtn'), mic = $('mic');
-  const clips = { idle: $('v-idle'), groom: $('v-groom'), bride: $('v-bride'), bow: $('v-bow'), wave: $('v-wave'), heart: $('v-heart'), look: $('v-look') };
+  const clips = { idle: $('v-idle'), groom: $('v-groom'), bride: $('v-bride'), bow: $('v-bow'), wave: $('v-wave'), heart: $('v-heart'), look: $('v-look'),
+    groom2: $('v-groom2'), bride2: $('v-bride2'), nod: $('v-nod'), hand: $('v-hand') };
+  // Each person has two speaking clips (calm, and with hand gestures); they alternate while the voice runs
+  const TALK = { groom: ['groom', 'groom2'], bride: ['bride', 'bride2'] };
+  const ACTS = ['bow', 'wave', 'heart', 'look', 'nod', 'hand'], IDLE_ACTS = ['look', 'look', 'hand'];
+  let talkClip = 'groom';
+  // The gesture clip only starts when the voice will outlast most of it, so it is never cut off mid-gesture;
+  // short answers and the tail of long ones use the calm clip, which barely moves
+  const nextTalk = person => {
+    const [calm, lively] = TALK[person];
+    const len = isFinite(audio.duration) && audio.duration ? audio.duration : (caps.length ? caps[caps.length - 1].e : 0);
+    const left = len - audio.currentTime;
+    talkClip = (!clips[lively].error && left >= 6 && talkClip !== lively) ? lively : calm;
+    return talkClip;
+  };
   const params = new URLSearchParams(location.search), debug = params.has('debug');
   let W, QA, who = 'groom', state = 'idle', caps = [], afterAct = null, speak = null, idleTimer = 0, fb = { groom: 0, bride: 0 }, audioDone = false;
 
@@ -120,24 +139,24 @@ body { background: #2a2018; color: var(--cream); font-family: var(--serif); font
   function scheduleIdleAct() {
     clearTimeout(idleTimer);
     idleTimer = setTimeout(() => {
-      if (state === 'idle' && stage.dataset.clip === 'idle') show('look'); else scheduleIdleAct();
+      if (state === 'idle' && stage.dataset.clip === 'idle') { const ok = IDLE_ACTS.filter(k => !clips[k].error); show(ok[Math.floor(Math.random() * ok.length)]); } else scheduleIdleAct();
     }, 14000 + Math.random() * 10000);
   }
-  const finish = () => { if (afterAct) { state = 'acting'; cap.classList.remove('on'); show(afterAct); } else rest(); };
-  for (const k of ['bow', 'wave', 'heart', 'look']) clips[k].addEventListener('ended', () => {
+  const finish = () => { if (afterAct && !clips[afterAct].error) { state = 'acting'; cap.classList.remove('on'); show(afterAct); } else rest(); };
+  for (const k of ACTS) clips[k].addEventListener('ended', () => {
     if (state === 'intro' && speak) { const go = speak; speak = null; go(); }
     else if (state === 'acting') rest();
     else if (state === 'idle' && stage.dataset.clip === k) { show('idle'); clips.idle.play().catch(() => {}); scheduleIdleAct(); }
   });
   // Speaking clips play through and return to the base pose; repeat while the voice continues
-  for (const k of ['groom', 'bride']) clips[k].addEventListener('ended', () => {
-    if (state !== 'talking') return;
-    if (audioDone) finish(); else { clips[k].currentTime = 0; clips[k].play().catch(() => {}); }
+  for (const k of ['groom', 'groom2', 'bride', 'bride2']) clips[k].addEventListener('ended', () => {
+    if (state !== 'talking' || talkClip !== k) return;
+    if (audioDone) finish(); else show(nextTalk(who));
   });
   audio.addEventListener('ended', () => {
     if (state !== 'talking') return;
     audioDone = true;
-    const v = clips[who];
+    const v = clips[talkClip];
     if (!(v.duration - v.currentTime < 1.2)) finish();   // nearly back at the base pose? let it land there
   });
   audio.addEventListener('timeupdate', () => {
@@ -178,7 +197,7 @@ body { background: #2a2018; color: var(--cream); font-family: var(--serif); font
     audio.src = `../media/talk/${person}/${it.id}.mp3`;
     caps = it.caps || []; afterAct = it.after || null; audioDone = false;
     stage.classList.add('busy'); mic.classList.remove('on'); mic.hidden = true; stopBtn.hidden = false;
-    const talk = () => { state = 'talking'; show(person); audio.play().catch(rest); };
+    const talk = () => { state = 'talking'; show(nextTalk(person)); audio.play().catch(rest); };
     if (it.before) { state = 'intro'; speak = talk; show(it.before); } else talk();
   }
   function ask(text) { const p = route(text); answer(text, match(text, p), p); }
