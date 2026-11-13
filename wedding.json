@@ -5,8 +5,8 @@
   "voice": "zh-TW-YunJheNeural",
   "rate": "-4%",
   "tts": "openai",
-  "openaiVoice": "ash",
-  "ttsStyle": "用台灣口音的國語說話，像二十多歲、溫和靦腆的新郎在婚禮上跟朋友聊天，自然、帶笑意。"
+  "openaiVoice": "echo",
+  "ttsStyle": "用台灣年輕人的口音說國語，像二十五歲、開朗活潑、愛笑的新郎在婚禮上跟好朋友聊天，語調輕快有精神、帶笑意，句尾自然上揚，不要太低沉、不要播音腔。"
  },
  "bride": {
   "name": "林語彤",
